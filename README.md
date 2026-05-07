@@ -33,7 +33,7 @@ Clean Architecture + MVVM pattern with 3 layers:
 3. **Network**: User has internet connection (no offline mode in v1)
 4. **Device**: Minimum Android 7.0 (API 24)
 5. **Orientation**: Portrait mode only (can be extended)
-6. **Language**: English only (can be localized)
+6. **Language**: localized to 5 languages only
 
 ## 🐛 Known Limitations
 
