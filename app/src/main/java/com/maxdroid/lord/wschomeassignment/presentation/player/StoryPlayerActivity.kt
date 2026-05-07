@@ -125,15 +125,49 @@ class StoryPlayerActivity : AppCompatActivity() {
         }
         
         binding.viewPager.adapter = adapter
+        binding.viewPager.offscreenPageLimit = 1
+        
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageScrollStateChanged(state: Int) {
+                super.onPageScrollStateChanged(state)
+                // When user starts scrolling, pause current video
+                if (state == ViewPager2.SCROLL_STATE_DRAGGING) {
+                    adapter?.pauseVideo()
+                }
+            }
+            
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                playClipAtPosition(position)
+                Timber.d("Page selected: $position")
+                // Wait for layout to settle before playing
+                binding.viewPager.post {
+                    playClipAtPosition(position)
+                }
             }
         })
         
-        // Play first clip
-        playClipAtPosition(0)
+        // Play first clip after layout is ready
+        binding.viewPager.post {
+            playClipAtPosition(0)
+        }
+    }
+    
+    private fun playClipAtPosition(position: Int) {
+        player?.let { exoPlayer ->
+            val recyclerView = binding.viewPager.getChildAt(0) as? androidx.recyclerview.widget.RecyclerView
+            val viewHolder = recyclerView?.findViewHolderForAdapterPosition(position) as? VideoClipAdapter.VideoClipViewHolder
+            
+            if (viewHolder != null) {
+                Timber.d("Playing clip at position $position")
+                adapter?.playVideo(position, exoPlayer, viewHolder.getPlayerView())
+            } else {
+                Timber.w("ViewHolder not found for position $position, retrying...")
+                // Retry after a short delay
+                binding.viewPager.postDelayed({
+                    playClipAtPosition(position)
+                }, 150)
+            }
+        }
     }
     
     private fun setupProgressIndicators(count: Int) {
@@ -185,18 +219,6 @@ class StoryPlayerActivity : AppCompatActivity() {
     
     private fun updateClipInfo(clip: VideoClip) {
         binding.clipTitle.text = clip.title ?: ""
-    }
-    
-    private fun playClipAtPosition(position: Int) {
-        player?.let { exoPlayer ->
-            adapter?.playVideo(position, exoPlayer)
-            
-            // Bind player to current ViewHolder
-            val viewHolder = (binding.viewPager.getChildAt(0) as? androidx.recyclerview.widget.RecyclerView)
-                ?.findViewHolderForAdapterPosition(position) as? VideoClipAdapter.VideoClipViewHolder
-            
-            viewHolder?.getPlayerView()?.player = exoPlayer
-        }
     }
     
     override fun onPause() {
