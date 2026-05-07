@@ -7,9 +7,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -124,6 +126,12 @@ private fun MatchesContent(
     matchesByLeague: Map<League, List<Match>>,
     onMatchClick: (String) -> Unit
 ) {
+    val expandedLeagues = remember { mutableStateMapOf<Int, Boolean>().apply {
+        matchesByLeague.keys.forEach { league ->
+            this[league.id] = false
+        }
+    } }
+    
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -131,41 +139,49 @@ private fun MatchesContent(
     ) {
         matchesByLeague.entries.forEachIndexed { index, (league, matches) ->
             item(key = "league_header_${league.id}_$index") {
-                LeagueHeader(league = league)
+                val isExpanded = expandedLeagues[league.id] ?: false
+                LeagueHeader(
+                    league = league,
+                    isExpanded = isExpanded,
+                    onToggle = {
+                        expandedLeagues[league.id] = !isExpanded
+                    }
+                )
             }
             
-            items(
-                items = matches,
-                key = { match -> "match_${match.id}" }
-            ) { match ->
-                MatchCard(
-                    match = match,
-                    onClick = { onMatchClick(match.id) }
-                )
+            val isExpanded = expandedLeagues[league.id] ?: false
+            if (isExpanded) {
+                items(
+                    items = matches,
+                    key = { match -> "match_${match.id}" }
+                ) { match ->
+                    MatchCard(
+                        match = match,
+                        onClick = { onMatchClick(match.id) }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun LeagueHeader(league: League) {
+private fun LeagueHeader(
+    league: League,
+    isExpanded: Boolean,
+    onToggle: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onToggle)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        AsyncImage(
-            model = league.logo,
-            contentDescription = league.name,
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Fit
-        )
+        LeagueLogo(leagueName = league.name, leagueLogo = league.logo)
         
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = league.name,
                 style = MaterialTheme.typography.titleMedium,
@@ -175,6 +191,44 @@ private fun LeagueHeader(league: League) {
                 text = league.country,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        Icon(
+            imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
+            contentDescription = if (isExpanded) "Collapse" else "Expand",
+            tint = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+private fun LeagueLogo(leagueName: String, leagueLogo: String) {
+    var isError by remember { mutableStateOf(false) }
+    
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        if (isError) {
+            Text(
+                text = leagueName.firstOrNull()?.uppercase() ?: "?",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        } else {
+            AsyncImage(
+                model = leagueLogo,
+                contentDescription = leagueName,
+                modifier = Modifier
+                    .size(28.dp)
+                    .padding(2.dp),
+                contentScale = ContentScale.Crop,
+                onError = { isError = true }
             )
         }
     }
@@ -291,14 +345,7 @@ private fun TeamInfo(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (!isAway) {
-            AsyncImage(
-                model = teamLogo,
-                contentDescription = teamName,
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Fit
-            )
+            TeamLogo(teamName = teamName, teamLogo = teamLogo)
             Spacer(modifier = Modifier.width(8.dp))
         }
         
@@ -311,13 +358,38 @@ private fun TeamInfo(
         
         if (isAway) {
             Spacer(modifier = Modifier.width(8.dp))
+            TeamLogo(teamName = teamName, teamLogo = teamLogo)
+        }
+    }
+}
+
+@Composable
+private fun TeamLogo(teamName: String, teamLogo: String) {
+    var isError by remember { mutableStateOf(false) }
+    
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        if (isError) {
+            Text(
+                text = teamName.firstOrNull()?.uppercase() ?: "?",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        } else {
             AsyncImage(
                 model = teamLogo,
                 contentDescription = teamName,
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Fit
+                    .size(36.dp)
+                    .padding(2.dp),
+                contentScale = ContentScale.Crop,
+                onError = { isError = true }
             )
         }
     }

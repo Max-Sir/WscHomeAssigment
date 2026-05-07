@@ -32,16 +32,19 @@ class StoryPlayerActivity : AppCompatActivity() {
     private val viewModel: StoryPlayerViewModel by viewModels()
     
     private var player: ExoPlayer? = null
-    private var prefetchPlayer: ExoPlayer? = null // Для предзагрузки следующего видео
+    private var prefetchPlayer: ExoPlayer? = null
     private var adapter: VideoClipAdapter? = null
     private var currentMatch: Match? = null
     
     private val progressBars = mutableListOf<ProgressBar>()
     private lateinit var gestureDetector: GestureDetector
     
+    private var progressUpdateRunnable: Runnable? = null
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    
     companion object {
         const val EXTRA_MATCH_ID = "match_id"
-        private const val SEEK_TIME_MS = 10000L // 10 секунд
+        private const val SEEK_TIME_MS = 10000L
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,7 +77,6 @@ class StoryPlayerActivity : AppCompatActivity() {
             finish()
         }
         
-        // Добавляем жесты для управления воспроизведением
         setupGestures()
     }
     
@@ -193,14 +195,34 @@ class StoryPlayerActivity : AppCompatActivity() {
                             }
                             Player.STATE_READY -> {
                                 binding.loadingIndicator.visibility = View.GONE
+                                if (this@apply.isPlaying) {
+                                    val currentPos = binding.viewPager.currentItem
+                                    if (currentPos < progressBars.size) {
+                                        startProgressUpdates(progressBars[currentPos])
+                                    }
+                                }
                             }
                             Player.STATE_ENDED -> {
                                 val currentItem = binding.viewPager.currentItem
                                 if (currentItem < match.videoClips.size - 1) {
                                     binding.viewPager.setCurrentItem(currentItem + 1, true)
+                                } else {
+                                    // Last video finished, return to leagues screen
+                                    finish()
                                 }
                             }
                             else -> {}
+                        }
+                    }
+                    
+                    override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        if (isPlaying) {
+                            val currentPos = binding.viewPager.currentItem
+                            if (currentPos < progressBars.size) {
+                                startProgressUpdates(progressBars[currentPos])
+                            }
+                        } else {
+                            stopProgressUpdates()
                         }
                     }
                 })
@@ -280,6 +302,7 @@ class StoryPlayerActivity : AppCompatActivity() {
             val viewHolder = recyclerView?.findViewHolderForAdapterPosition(position) as? VideoClipAdapter.VideoClipViewHolder
             
             if (viewHolder != null) {
+                updateProgressIndicators(position)
                 adapter?.playVideo(position, exoPlayer, viewHolder.getPlayerView())
             } else {
                 binding.viewPager.postDelayed({
@@ -349,6 +372,30 @@ class StoryPlayerActivity : AppCompatActivity() {
         }
     }
     
+    private fun startProgressUpdates(progressBar: ProgressBar) {
+        stopProgressUpdates()
+        
+        progressUpdateRunnable = object : Runnable {
+            override fun run() {
+                player?.let { exoPlayer ->
+                    if (exoPlayer.duration > 0) {
+                        val progress = ((exoPlayer.currentPosition.toFloat() / exoPlayer.duration.toFloat()) * 100).toInt()
+                        progressBar.progress = progress.coerceIn(0, 100)
+                    }
+                }
+                handler.postDelayed(this, 100)
+            }
+        }
+        handler.post(progressUpdateRunnable!!)
+    }
+    
+    private fun stopProgressUpdates() {
+        progressUpdateRunnable?.let { runnable ->
+            handler.removeCallbacks(runnable)
+        }
+        progressUpdateRunnable = null
+    }
+    
     private fun updateClipInfo(clip: VideoClip) {
         binding.clipTitle.text = clip.title ?: ""
     }
@@ -356,6 +403,7 @@ class StoryPlayerActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         adapter?.pauseVideo()
+        stopProgressUpdates()
     }
     
     override fun onResume() {
@@ -365,6 +413,7 @@ class StoryPlayerActivity : AppCompatActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
+        stopProgressUpdates()
         adapter?.releasePlayer()
         player?.release()
         player = null

@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">WSC Home Assignment</string>
+    <string name="close">סגור</string>
+    <string name="loading">טוען…</string>
+    <string name="error_loading_matches">שגיאה בטעינת משחקים</string>
+    <string name="retry">נסה שוב</string>
+    <string name="no_matches">אין משחקים זמינים</string>
+    <string name="no_matches_with_highlights">אין משחקים עם תקצירים זמינים</string>
+    <string name="highlights">%d תקצירים</string>
+    <string name="live">שידור חי</string>
+    <string name="leagues">ליגות</string>
+    <string name="loading_matches">טוען משחקים…</string>
+    <string name="match_title">%1$s נגד %2$s</string>
+</resources>

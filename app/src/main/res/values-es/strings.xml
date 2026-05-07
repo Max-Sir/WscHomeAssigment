@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">WSC Home Assignment</string>
+    <string name="close">Cerrar</string>
+    <string name="loading">Cargando…</string>
+    <string name="error_loading_matches">Error al cargar partidos</string>
+    <string name="retry">Reintentar</string>
+    <string name="no_matches">No hay partidos disponibles</string>
+    <string name="no_matches_with_highlights">No hay partidos con resúmenes disponibles</string>
+    <string name="highlights">%d resúmenes</string>
+    <string name="live">EN VIVO</string>
+    <string name="leagues">Ligas</string>
+    <string name="loading_matches">Cargando partidos…</string>
+    <string name="match_title">%1$s vs %2$s</string>
+</resources>

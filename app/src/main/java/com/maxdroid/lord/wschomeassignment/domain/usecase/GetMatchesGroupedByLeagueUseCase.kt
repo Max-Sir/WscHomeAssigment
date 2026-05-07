@@ -12,8 +12,23 @@ class GetMatchesGroupedByLeagueUseCase @Inject constructor(
     suspend operator fun invoke(): Result<Map<League, List<Match>>> {
         return when (val result = repository.getMatches()) {
             is Result.Success -> {
-                val groupedMatches = result.data.groupBy { it.league }
-                Result.Success(groupedMatches)
+                // Group by league ID first to avoid duplicate league objects
+                val groupedById = result.data.groupBy { it.league.id }
+                
+                // Convert to Map<League, List<Match>> using the first league object from each group
+                val groupedMatches = groupedById.mapKeys { (_, matches) ->
+                    matches.first().league
+                }
+                
+                // Sort leagues by number of matches (descending), then by name
+                val sortedGroupedMatches = groupedMatches.toList()
+                    .sortedWith(
+                        compareByDescending<Pair<League, List<Match>>> { it.second.size }
+                            .thenBy { it.first.name }
+                    )
+                    .toMap(LinkedHashMap())
+                
+                Result.Success(sortedGroupedMatches)
             }
             is Result.Error -> result
         }

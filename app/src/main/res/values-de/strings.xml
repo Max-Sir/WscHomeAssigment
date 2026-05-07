@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">WSC Home Assignment</string>
+    <string name="close">Schließen</string>
+    <string name="loading">Lädt…</string>
+    <string name="error_loading_matches">Fehler beim Laden der Spiele</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="no_matches">Keine Spiele verfügbar</string>
+    <string name="no_matches_with_highlights">Keine Spiele mit Highlights verfügbar</string>
+    <string name="highlights">%d Highlights</string>
+    <string name="live">LIVE</string>
+    <string name="leagues">Ligen</string>
+    <string name="loading_matches">Spiele werden geladen…</string>
+    <string name="match_title">%1$s gegen %2$s</string>
+</resources>
