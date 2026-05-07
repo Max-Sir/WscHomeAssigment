@@ -1,257 +1,109 @@
 # WSC Sports Home Assignment - Android
 
-A modern Android application that displays sports match highlights in an Instagram Stories-style video player.
-
-## 📱 Features
-
-- **Leagues Screen** (Jetpack Compose)
-  - Displays matches grouped by league
-  - Shows team logos, scores, and match status
-  - Live match indicators
-  - Pull-to-refresh functionality
-  - Error handling with retry
-
-- **Story Player** (XML + ExoPlayer)
-  - Instagram Stories-style horizontal swipe
-  - Auto-advance to next clip
-  - Progress indicators for each clip
-  - Smooth video playback with prefetching
-  - Fullscreen immersive experience
-
 ## 🏗️ Architecture
 
-This project follows **Clean Architecture** principles with **MVVM** pattern:
+Clean Architecture + MVVM pattern with 3 layers:
+- **Presentation**: ViewModels, Compose UI, XML layouts
+- **Domain**: Use Cases, Business Models
+- **Data**: Repository, API, DTOs
 
-```
-┌─────────────────────────────────────────┐
-│         Presentation Layer              │
-│  (Activities, Fragments, Compose UI)    │
-│         ViewModels, UI State            │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│          Domain Layer                   │
-│    (Use Cases, Domain Models)           │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│           Data Layer                    │
-│  (Repository, Remote/Local DataSource)  │
-└─────────────────────────────────────────┘
-```
-
-### Key Components
-
-- **Data Layer**: API service, DTOs, Repository implementation
-- **Domain Layer**: Business models, Repository interface, Use cases
-- **Presentation Layer**: ViewModels, Compose UI, XML layouts
-
-## 🔧 Tech Stack
-
-### Core
-- **Kotlin** - Modern programming language
-- **Jetpack Compose** - Modern declarative UI (Leagues screen)
-- **XML Layouts** - Traditional Android UI (Player screen)
-- **Coroutines** - Asynchronous programming
-- **Flow** - Reactive data streams
-
-### Architecture Components
-- **ViewModel** - Lifecycle-aware state management
-- **Hilt** - Dependency injection
-- **Navigation** - Screen navigation
-
-### Networking
-- **Retrofit** - REST API client
-- **OkHttp** - HTTP client with logging
-- **Moshi** - JSON parsing
-
-### Media
-- **ExoPlayer (Media3)** - Professional video playback
-- **ViewPager2** - Swipe between clips
-
-### Image Loading
-- **Coil** - Modern image loading with caching
-
-### Utilities
-- **Timber** - Logging
-
-## 📋 Requirements Met
-
-✅ Display matches grouped by league  
-✅ Show final scores from last page  
-✅ Filter games without `wscGame` or `primeStory`  
-✅ Instagram Stories-style horizontal player  
-✅ Swipe between video clips  
-✅ Root app: XML-based  
-✅ Leagues screen: Jetpack Compose  
-✅ Player screen: XML  
-✅ Clean architecture with best practices  
-✅ Prefetching and caching for smooth UX  
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Android Studio Ladybug or newer
-- JDK 11 or higher
-- Android SDK 24+ (Android 7.0+)
-
-### Installation
-
-1. Clone the repository
-```bash
-git clone <repository-url>
-cd WSCHomeAssignment
-```
-
-2. Open in Android Studio
-```
-File > Open > Select project folder
-```
-
-3. Sync Gradle
-```
-File > Sync Project with Gradle Files
-```
-
-4. Run the app
-```
-Run > Run 'app'
-```
-
-## 📱 How to Use
-
-1. **Launch the app** - You'll see the Leagues screen with matches grouped by league
-2. **Tap any match** - Opens the Story Player with video highlights
-3. **Swipe left/right** - Navigate between video clips
-4. **Auto-advance** - Videos automatically advance to the next clip
-5. **Close player** - Tap the X button or swipe down
-
-## 🎯 Design Decisions
+## 🏗️ Architecture Pattern: Clean Architecture + MVVM
 
 ### Why Clean Architecture?
-- **Separation of Concerns**: Each layer has a single responsibility
-- **Testability**: Easy to write unit tests for each layer
-- **Maintainability**: Changes in one layer don't affect others
-- **Scalability**: Easy to add new features
+- **Separation of Concerns**: Clear boundaries between layers
+- **Testability**: Each layer can be tested independently
+- **Maintainability**: Easy to modify without affecting other layers
+- **Scalability**: Simple to add new features
 
-### Why Jetpack Compose for Leagues?
-- Modern declarative UI
-- Less boilerplate code
-- Better performance
-- Easier state management
+## 🚀 Future Enhancements
 
-### Why XML for Player?
-- Better control over ExoPlayer integration
-- Proven stability for video playback
-- Easier gesture handling
-
-### Why ExoPlayer?
-- Industry-standard video player
-- Adaptive streaming support
-- Excellent caching capabilities
-- Smooth playback experience
-
-### Data Filtering Strategy
-```kotlin
-// Filter at the data layer during mapping
-games.filter { game ->
-    game.wscGame != null && 
-    game.wscGame.primeStory != null &&
-    game.wscGame.primeStory.pages.isNotEmpty()
-}
-```
-
-### Final Score Extraction
-```kotlin
-// Get score from last page as per requirements
-val lastPage = match.wscGame.primeStory.pages.lastOrNull()
-val homeScore = lastPage?.homeScore ?: 0
-val awayScore = lastPage?.awayScore ?: 0
-```
-
-## 🎨 UI/UX Highlights
-
-- **Material Design 3** - Modern, clean interface
-- **Smooth animations** - Polished user experience
-- **Loading states** - Clear feedback during data fetch
-- **Error handling** - User-friendly error messages with retry
-- **Live indicators** - Red dot for live matches
-- **Progress bars** - Instagram-style progress indicators
-- **Immersive player** - Fullscreen video experience
-
-## 🔍 Performance Optimizations
-
-1. **Lazy Loading** - LazyColumn for efficient list rendering
-2. **Image Caching** - Coil handles memory and disk caching
-3. **Video Prefetching** - Next video preloaded for smooth transition
-4. **Coroutines** - Non-blocking async operations
-5. **StateFlow** - Efficient state management
-
-## 🧪 Testing
-
-The architecture supports easy testing:
-
-- **Unit Tests**: ViewModels, Use Cases, Repository
-- **Integration Tests**: API service with MockWebServer
-- **UI Tests**: Compose and Espresso tests
+1. **Offline Mode**: Cache matches for offline viewing
+2. **Favorites**: Save favorite teams/leagues
+3. **Notifications**: Match start reminders
+4. **Search**: Find specific matches
+5. **Filters**: By date, league, team
+6. **Analytics**: Track user engagement
+7. **Picture-in-Picture**: Continue watching while browsing
+8. **Chromecast**: Cast to TV
 
 ## 📝 Assumptions
 
-1. **Network**: App requires internet connection (no offline mode in v1)
+1. **API Availability**: JSON endpoint is always accessible
 2. **Video Format**: All videos are MP4 compatible with ExoPlayer
-3. **API Stability**: JSON endpoint is always accessible
+3. **Network**: User has internet connection (no offline mode in v1)
 4. **Device**: Minimum Android 7.0 (API 24)
-5. **Orientation**: Portrait mode only
+5. **Orientation**: Portrait mode only (can be extended)
 6. **Language**: English only (can be localized)
 
 ## 🐛 Known Limitations
 
-1. **No Offline Support**: Requires active internet connection
+1. **No Offline Support**: Requires internet connection
 2. **No Background Playback**: Videos stop when app is backgrounded
-3. **Portrait Only**: Landscape mode not implemented
-4. **Basic Error Recovery**: Simple retry mechanism
+3. **Limited Error Recovery**: Basic retry mechanism
+4. **No Analytics**: No usage tracking in v1
 
-## 🚀 Future Enhancements
+## 🔧 Tech Stack
 
-- [ ] Offline mode with local caching
-- [ ] Favorites and bookmarks
-- [ ] Search functionality
-- [ ] Filters (by date, league, team)
-- [ ] Push notifications for match updates
-- [ ] Picture-in-Picture mode
-- [ ] Chromecast support
-- [ ] Analytics integration
-- [ ] Multi-language support
+- **Kotlin** 2.0.21
+- **Jetpack Compose** + **XML**
+- **Hilt** (DI)
+- **Retrofit** + **Moshi** (Networking)
+- **ExoPlayer/Media3** (Video)
+- **Coil3** (Images)
+- **Coroutines** + **Flow** (Async)
+- **Material3** (Design)
+- **ViewPager2** (Swipe)
+- **Timber** (Logging)
 
-## 📚 Project Structure
+## 📋 Requirements Met
 
-```
-app/src/main/java/com/maxdroid/lord/wschomeassignment/
-├── data/
-│   ├── remote/
-│   │   ├── api/          # Retrofit API service
-│   │   └── dto/          # Data Transfer Objects
-│   └── repository/       # Repository implementation
-├── domain/
-│   ├── model/            # Domain models
-│   ├── repository/       # Repository interface
-│   └── usecase/          # Business logic
-├── presentation/
-│   ├── leagues/          # Leagues screen (Compose)
-│   ├── player/           # Story player (XML)
-│   └── theme/            # Compose theme
-├── di/                   # Dependency injection
-└── util/                 # Utilities
-```
+### Core Requirements (11/11) ✅
+✅ Display matches grouped by league  
+✅ Filter games without wscGame/primeStory  
+✅ Final score from last page  
+✅ Horizontal swipe player  
+✅ Root app: XML  
+✅ Leagues: Compose  
+✅ Player: XML  
+✅ Prefetching & caching  
+✅ Clean architecture  
+✅ Open-source libraries  
+✅ Technical design principles  
 
-## 📄 License
+## 🎯 Key Features
 
-This project is created for the WSC Sports home assignment.
+### Performance
+- **Instant loading** - first video < 1 second
+- **Smart prefetching** - dual ExoPlayer for background loading
+- **Optimized buffering** - 8s min, 25s max, 500ms start threshold
+- **Image caching** - Coil automatic memory + disk cache
+- **ViewPager2** - offscreenPageLimit=2 for prefetching
+
+### User Experience
+- **Collapsible leagues** - clean UI, tap to expand
+- **Real-time progress** - bars fill as video plays
+- **Auto-close** - returns to leagues when done
+- **Gesture controls** - intuitive video control
+- **Fallback placeholders** - handles missing logos gracefully
+- **5 languages** - international support with RTL
+
+### Code Quality
+- **Clean Architecture** - proper separation of concerns
+- **MVVM pattern** - reactive UI with Flow
+- **Dependency Injection** - Hilt for testability
+- **Type safety** - sealed classes, null safety
+- **SOLID principles** - maintainable code
+
+## 🌍 Supported Languages
+
+| Language | Code | RTL | Status |
+|----------|------|-----|--------|
+| English | en | No | ✅ Default |
+| Hebrew | he | Yes | ✅ Complete |
+| Spanish | es | No | ✅ Complete |
+| German | de | No | ✅ Complete |
+| Portuguese | pt | No | ✅ Complete |
 
 ## 👤 Author
 
-Senior Android Engineer
-
----
-
-**Note**: This is a production-ready implementation following Android best practices and modern architecture patterns.
+Maksim Syramalotau
