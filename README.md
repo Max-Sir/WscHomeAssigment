@@ -96,13 +96,13 @@ Clean Architecture + MVVM pattern with 3 layers:
 
 ## 🌍 Supported Languages
 
-| Language | Code | RTL | Status |
-|----------|------|-----|--------|
-| English | en | No | ✅ Default |
-| Hebrew | he | Yes | ✅ Complete |
-| Spanish | es | No | ✅ Complete |
-| German | de | No | ✅ Complete |
-| Portuguese | pt | No | ✅ Complete |
+| Language | Code |
+|----------|------|
+| English | en |
+| Hebrew | he |
+| Spanish | es |
+| German | de |
+| Portuguese | pt |
 
 ## 👤 Author
 
