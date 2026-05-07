@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.maxdroid.lord.wschomeassignment.presentation.leagues.LeaguesScreen
 import com.maxdroid.lord.wschomeassignment.presentation.player.StoryPlayerActivity
 import com.maxdroid.lord.wschomeassignment.presentation.theme.WSCTheme
@@ -15,6 +16,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         
         setContent {

@@ -5,6 +5,10 @@
     <string name="error_loading_matches">Error loading matches</string>
     <string name="retry">Retry</string>
     <string name="no_matches">No matches available</string>
+    <string name="no_matches_with_highlights">No matches with highlights available</string>
     <string name="highlights">%d highlights</string>
     <string name="live">LIVE</string>
+    <string name="leagues">Leagues</string>
+    <string name="loading_matches">Loading matches…</string>
+    <string name="match_title">%1$s vs %2$s</string>
 </resources>

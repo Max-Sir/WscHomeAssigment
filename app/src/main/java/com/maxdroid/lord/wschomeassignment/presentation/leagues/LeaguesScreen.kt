@@ -15,12 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.maxdroid.lord.wschomeassignment.R
 import com.maxdroid.lord.wschomeassignment.domain.model.League
 import com.maxdroid.lord.wschomeassignment.domain.model.Match
 import java.text.SimpleDateFormat
@@ -36,7 +38,7 @@ fun LeaguesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Leagues") },
+                title = { Text(stringResource(R.string.leagues)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -81,7 +83,7 @@ private fun LoadingContent() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             CircularProgressIndicator()
-            Text("Loading matches...")
+            Text(stringResource(R.string.loading_matches))
         }
     }
 }
@@ -101,7 +103,7 @@ private fun ErrorContent(
             modifier = Modifier.padding(32.dp)
         ) {
             Text(
-                text = "Error",
+                text = stringResource(R.string.error_loading_matches),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.error
             )
@@ -111,7 +113,7 @@ private fun ErrorContent(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Button(onClick = onRetry) {
-                Text("Retry")
+                Text(stringResource(R.string.retry))
             }
         }
     }
@@ -211,7 +213,7 @@ private fun MatchCard(
                                 .background(Color.Red)
                         )
                         Text(
-                            text = "LIVE",
+                            text = stringResource(R.string.live),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Red,
                             fontWeight = FontWeight.Bold
@@ -268,7 +270,7 @@ private fun MatchCard(
             
             // Clips count
             Text(
-                text = "${match.videoClips.size} highlights",
+                text = stringResource(R.string.highlights, match.videoClips.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )

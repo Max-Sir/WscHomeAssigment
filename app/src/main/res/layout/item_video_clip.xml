@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
-    <!-- ExoPlayer PlayerView -->
     <androidx.media3.ui.PlayerView
         android:id="@+id/player_view"
         android:layout_width="match_parent"
@@ -15,6 +14,7 @@
         app:resize_mode="fit"
         app:surface_type="surface_view"
         app:use_controller="false"
-        app:show_buffering="when_playing" />
+        app:show_buffering="never"
+        app:keep_content_on_player_reset="true" />
 
 </FrameLayout>

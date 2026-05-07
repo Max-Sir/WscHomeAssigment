@@ -1,6 +1,8 @@
 package com.maxdroid.lord.wschomeassignment.presentation.player
 
 import android.os.Bundle
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -30,13 +32,16 @@ class StoryPlayerActivity : AppCompatActivity() {
     private val viewModel: StoryPlayerViewModel by viewModels()
     
     private var player: ExoPlayer? = null
+    private var prefetchPlayer: ExoPlayer? = null // Для предзагрузки следующего видео
     private var adapter: VideoClipAdapter? = null
     private var currentMatch: Match? = null
     
     private val progressBars = mutableListOf<ProgressBar>()
+    private lateinit var gestureDetector: GestureDetector
     
     companion object {
         const val EXTRA_MATCH_ID = "match_id"
+        private const val SEEK_TIME_MS = 10000L // 10 секунд
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,6 +73,71 @@ class StoryPlayerActivity : AppCompatActivity() {
         binding.closeButton.setOnClickListener {
             finish()
         }
+        
+        // Добавляем жесты для управления воспроизведением
+        setupGestures()
+    }
+    
+    private fun setupGestures() {
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                togglePlayPause()
+                return true
+            }
+            
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                val screenWidth = binding.root.width
+                val tapX = e.x
+                
+                if (tapX < screenWidth / 2) {
+                    seekBackward()
+                } else {
+                    seekForward()
+                }
+                return true
+            }
+            
+            override fun onLongPress(e: MotionEvent) {
+                adapter?.pauseVideo()
+            }
+        })
+        
+        binding.viewPager.setOnTouchListener { view, event ->
+            val gestureHandled = gestureDetector.onTouchEvent(event)
+            
+            if (!gestureHandled && event.action == MotionEvent.ACTION_MOVE) {
+                view.onTouchEvent(event)
+            } else {
+                gestureHandled
+            }
+        }
+    }
+    
+    private fun togglePlayPause() {
+        player?.let { exoPlayer ->
+            if (exoPlayer.isPlaying) {
+                adapter?.pauseVideo()
+            } else {
+                adapter?.resumeVideo()
+            }
+        }
+    }
+    
+    private fun seekForward() {
+        player?.let { exoPlayer ->
+            val currentPosition = exoPlayer.currentPosition
+            val duration = exoPlayer.duration
+            val newPosition = (currentPosition + SEEK_TIME_MS).coerceAtMost(duration)
+            exoPlayer.seekTo(newPosition)
+        }
+    }
+    
+    private fun seekBackward() {
+        player?.let { exoPlayer ->
+            val currentPosition = exoPlayer.currentPosition
+            val newPosition = (currentPosition - SEEK_TIME_MS).coerceAtLeast(0)
+            exoPlayer.seekTo(newPosition)
+        }
     }
     
     private fun observeViewModel() {
@@ -96,59 +166,111 @@ class StoryPlayerActivity : AppCompatActivity() {
     private fun setupPlayer(match: Match) {
         currentMatch = match
         
-        // Setup match info
-        binding.matchTitle.text = "${match.homeTeam.name} vs ${match.awayTeam.name}"
+        binding.matchTitle.text = getString(R.string.match_title, match.homeTeam.name, match.awayTeam.name)
         
-        // Initialize ExoPlayer
-        player = ExoPlayer.Builder(this).build().apply {
-            repeatMode = Player.REPEAT_MODE_OFF
-            addListener(object : Player.Listener {
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    if (playbackState == Player.STATE_ENDED) {
-                        // Auto-advance to next clip
-                        val currentItem = binding.viewPager.currentItem
-                        if (currentItem < match.videoClips.size - 1) {
-                            binding.viewPager.setCurrentItem(currentItem + 1, true)
+        // Initialize main player with optimized buffering
+        player = ExoPlayer.Builder(this)
+            .setLoadControl(
+                androidx.media3.exoplayer.DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(
+                        8000,   // Min buffer
+                        25000,  // Max buffer
+                        500,    // Playback start threshold
+                        1000    // Playback after rebuffer
+                    )
+                    .setPrioritizeTimeOverSizeThresholds(true)
+                    .build()
+            )
+            .build()
+            .apply {
+                repeatMode = Player.REPEAT_MODE_OFF
+                playWhenReady = false
+                addListener(object : Player.Listener {
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        when (playbackState) {
+                            Player.STATE_BUFFERING -> {
+                                binding.loadingIndicator.visibility = View.VISIBLE
+                            }
+                            Player.STATE_READY -> {
+                                binding.loadingIndicator.visibility = View.GONE
+                            }
+                            Player.STATE_ENDED -> {
+                                val currentItem = binding.viewPager.currentItem
+                                if (currentItem < match.videoClips.size - 1) {
+                                    binding.viewPager.setCurrentItem(currentItem + 1, true)
+                                }
+                            }
+                            else -> {}
                         }
                     }
-                }
-            })
+                })
+            }
+        
+        // Pre-load first video before UI creation for instant playback
+        if (match.videoClips.isNotEmpty()) {
+            val firstClip = match.videoClips[0]
+            val mediaItem = androidx.media3.common.MediaItem.fromUri(firstClip.videoUrl)
+            player?.setMediaItem(mediaItem)
+            player?.prepare()
         }
         
-        // Setup progress indicators
+        // Initialize prefetch player for background loading
+        prefetchPlayer = ExoPlayer.Builder(this)
+            .setLoadControl(
+                androidx.media3.exoplayer.DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(5000, 15000, 500, 1000)
+                    .build()
+            )
+            .build()
+            .apply {
+                playWhenReady = false
+                volume = 0f
+            }
+        
         setupProgressIndicators(match.videoClips.size)
         
-        // Setup ViewPager2
         adapter = VideoClipAdapter(match.videoClips) { position, clip ->
             updateProgressIndicators(position)
             updateClipInfo(clip)
         }
         
         binding.viewPager.adapter = adapter
-        binding.viewPager.offscreenPageLimit = 1
+        binding.viewPager.offscreenPageLimit = 2
         
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            private var previousPosition = 0
+            
             override fun onPageScrollStateChanged(state: Int) {
                 super.onPageScrollStateChanged(state)
-                // When user starts scrolling, pause current video
-                if (state == ViewPager2.SCROLL_STATE_DRAGGING) {
-                    adapter?.pauseVideo()
+                when (state) {
+                    ViewPager2.SCROLL_STATE_DRAGGING -> {
+                        adapter?.pauseVideo()
+                    }
+                    ViewPager2.SCROLL_STATE_IDLE -> {
+                        val currentPosition = binding.viewPager.currentItem
+                        if (currentPosition == previousPosition) {
+                            adapter?.resumeVideo()
+                        }
+                    }
                 }
             }
             
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                Timber.d("Page selected: $position")
-                // Wait for layout to settle before playing
-                binding.viewPager.post {
-                    playClipAtPosition(position)
+                previousPosition = position
+                playClipAtPosition(position)
+                
+                if (position + 1 < match.videoClips.size) {
+                    prefetchNextVideo(position + 1)
                 }
             }
         })
         
-        // Play first clip after layout is ready
         binding.viewPager.post {
             playClipAtPosition(0)
+            if (match.videoClips.size > 1) {
+                prefetchNextVideo(1)
+            }
         }
     }
     
@@ -158,14 +280,24 @@ class StoryPlayerActivity : AppCompatActivity() {
             val viewHolder = recyclerView?.findViewHolderForAdapterPosition(position) as? VideoClipAdapter.VideoClipViewHolder
             
             if (viewHolder != null) {
-                Timber.d("Playing clip at position $position")
                 adapter?.playVideo(position, exoPlayer, viewHolder.getPlayerView())
             } else {
-                Timber.w("ViewHolder not found for position $position, retrying...")
-                // Retry after a short delay
                 binding.viewPager.postDelayed({
                     playClipAtPosition(position)
-                }, 150)
+                }, 100)
+            }
+        }
+    }
+    
+    private fun prefetchNextVideo(position: Int) {
+        currentMatch?.let { match ->
+            if (position < match.videoClips.size) {
+                val clip = match.videoClips[position]
+                prefetchPlayer?.let { player ->
+                    val mediaItem = androidx.media3.common.MediaItem.fromUri(clip.videoUrl)
+                    player.setMediaItem(mediaItem)
+                    player.prepare()
+                }
             }
         }
     }
@@ -236,5 +368,7 @@ class StoryPlayerActivity : AppCompatActivity() {
         adapter?.releasePlayer()
         player?.release()
         player = null
+        prefetchPlayer?.release()
+        prefetchPlayer = null
     }
 }
